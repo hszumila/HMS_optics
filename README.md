@@ -64,13 +64,21 @@ In the case of keywords beampos, thetaHMS, nfoil, zfoil and sieveslit, if the ke
 After the "endlist" keyword is encountered, there are a few subsequent arguments expected. 
 
 oldcoeff.dat: name of file containing "old" (starting) reconstruction matrix elements
+
 newcoeff.dat: name of file containing "new" reconstruction matrix elements (file to which fit results will be written). 
+
 htheta_offset_old: offset applied to yptar (in-plane) angle.
+
 hphi_offset_old: offset applied to xptar (out-of-plane) angle.
+
 fitorder: usually 5 or 6, this is the order of the fit to perform.
+
 maxnperhole: integer, max number of events per sieve hole per target foil to include in the fit (generally a small number like 100-1000 events is good here, to ensure roughly equal weighting of sieve holes in the fit). 
+
 maxnperfoil: max number of events per target foil to include in the fit (only applies to the "sieveslit 0" case, so generally has no effect). 
+
 zoffset_foil: Global offset applied to the z position of all target foils. 
+
 fit_xtar_coeffs_flag: 0 or 1, flag to choose whether to include xtarget-dependent coefficients in the fit (generally better to use 0 as these are computed from COSY, since in real data the system is underdetermined). 
 
 In general, the code will then loop over all sieve holes for each foil for each run, and attempt to automatically determine a cut to select events going through a given sieve hole, but will require input from the user to validate each hole (you can tweak the range of the fit to get a better result, or you can reject a hole if a good fit cannot be achieved). Once cuts have been defined for all sieve holes for all foils for all runs, the program sets up and solves the equations for the new coefficients, and writes the file. The ROOT tree in the output root file contains diagnostic information, basically it has the focal plane track parameters, the "true" target track parameters determined from the sieve hole positions and the target foil/beam positions and the reconstructed target track parameters using the old (initial) reconstruction matrix elements. 

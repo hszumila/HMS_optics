@@ -6,11 +6,11 @@ HMS Optics Optimization using ROOT compiled macro
 
 The main program is HMS_ytarget_fit.C. It runs as a standard compiled ROOT macro: e.g.: 
 
-.L HMS_ytarget_fit.C+
+`.L HMS_ytarget_fit.C+`
 
 or
 
-.x HMS_ytarget_fit.C+("setup_filename.txt")
+`.x HMS_ytarget_fit.C+("setup_filename.txt")`
 
 There is one required argument and several more optional arguments: 
 
@@ -51,7 +51,7 @@ to be in the form "keyword value". Possible keywords are:
 
 `nfoil N`: "nfoil" keyword defines number of target foils in the run. Expects one integer argument.
 
-zfoil z1 z2 ... zN: "zfoil" keyword defines z position of target foils in the run. Expects nfoil arguments, assumed to be given in cm. If nfoil is not yet defined for the run, the command has no effect. 
+`zfoil z1 z2 ... zN`: "zfoil" keyword defines z position of target foils in the run. Expects nfoil arguments, assumed to be given in cm. If nfoil is not yet defined for the run, the command has no effect. 
 
 `sieveslit 1`: "sieveslit" flag defines whether the sieve slit was in or out for this run. Expects an integer argument (0 or 1). If you have thin-foil data without sieve slit, the code will attempt to include the data in the ytarget fit, but generally you will only want to use data with sieve slit to fit ytarget, xptar and yptar, so usually you want to use "sieveslit 1". You can omit this command and it will default to 1. 
 
@@ -111,7 +111,7 @@ Notes on handling of xtar
 
 Right near the end of the code, after the second event loop that fills the SVD matrices, there is a short loop that has a comment at the top that says:
 
-//Now, do some post-processing of these matrices depending on xtar behavior:
+`//Now, do some post-processing of these matrices depending on xtar behavior`
 
 In that loop, any terms where the xtar exponent is non-zero (i.e. xtar-dependent terms) are set to zero for the ytarget/yptarget/xptarget column fitting matrices, and to diagonal=1/off-diagonal=0 for the square “lambda_fp” fitting matrix.
 
@@ -127,7 +127,7 @@ Recall that the problem of reconstruction is actually under-determined; in any g
 
 For a given z position of the interaction vertex, xtar and xptar are essentially 100% correlated. The raster size in the vertical direction is typically small compared to the range of xtar that is populated by the combined zvertex-xptar phase space populated by an extended target. If you plot (reconstructed) xtar vs zvertex, you will typically get an "hourglass" shape with a waist at zvertex = 0. The width of this "waist" equals the vertical raster size. If you select a narrow range of xptar (zvertex) and plot xtar vs zvertex (xptar) you will get a linear correlation, the slope of which depends on xptar (zvertex). xtar, as you can find in the code, is defined by the equation:
 
-xtar = -ybeam - xptar * ( cos(thetaHMS) * zvertex + sin(thetaHMS) * xbeam ), 
+`xtar = -ybeam - xptar * ( cos(thetaHMS) * zvertex + sin(thetaHMS) * xbeam )` 
 
 where (xbeam, ybeam) is the beam position at the interaction vertex measured in a coordinate system with +xbeam horizontal, pointing to beam right and +ybeam vertically up. Because xtar and xptar are essentially 100% correlated, there isn't really enough independent information to determine the xtar-dependent coefficients, which are significantly non-zero only for the reconstruction of xptar and delta. Note that attempting to fit the xtar-dependent coefficients for xptar also affects the momentum reconstruction, since the value of xtar used as input to the momentum reconstruction is affected by the quality of the reconstruction of xptar. If one really wants to optimize these coefficients, one needs to obtain a set of optics calibration data for several different (and widely varying) vertical beam positions and/or with a large raster size. With our optics data from GEp-III, one cannot do any better for these coefficients than the starting values calculated by COSY. 
 

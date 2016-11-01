@@ -24,6 +24,7 @@
 #include "TMatrixD.h"
 #include "TRint.h"
 #include "TString.h"
+#include "TStyle.h"
 #include "TSystem.h"
 #include "TVectorD.h"
 
@@ -73,6 +74,10 @@ int main(int argc, char* argv[]) {
 
 
 int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
+
+  gStyle->SetOptFit(0000);
+  gStyle->SetOptStat("");
+
   cout
     << "Reading config file:" << endl
     << "  `" << cmdOpts.configFileName << "`" << endl;
@@ -88,11 +93,11 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
   );
   cout
     << "Reading xTar dependent matrix file:" << endl
-    << "`" << recMatrixDepFileName << "`" << endl;
+    << "  `" << recMatrixDepFileName << "`" << endl;
   RecMatrix recMatrixDep = readMatrixFile(recMatrixDepFileName);
   cout
     << "Reading xTar independent matrix file:" << endl
-    << "`" << recMatrixIndepFileName << "`" << endl;
+    << "  `" << recMatrixIndepFileName << "`" << endl;
   RecMatrix recMatrixIndep = readMatrixFile(recMatrixIndepFileName);
 
 
@@ -430,7 +435,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
       TH2D& xySieveHist = xySieveHists.at(iFoil);
 
       c1->cd();
-      xySieveHist.Draw();
+      xySieveHist.Draw("colz");
       c1->Update();
       gPad->Update();
 
@@ -746,12 +751,12 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
   );
 
   cout
-    << "Saving xTar independent matrix to:" >> endl
-    << "`" << recMatrixIndepFileName << endl << "`";
+    << "Saving xTar independent matrix to:" << endl
+    << "  `" << recMatrixIndepFileName << "`" << endl;
   writeMatrixFile(recMatrixIndepFileName, recMatrixNew);
   cout
     << "Saving xTar dependent matrix to:" << endl
-    << "`" << recMatrixDepFileName << "`" << endl;
+    << "  `" << recMatrixDepFileName << "`" << endl;
   writeMatrixFile(recMatrixDepFileName, recMatrixDep);
 
   // Cleanup and exit.

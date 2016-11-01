@@ -20,6 +20,7 @@
 #include "TMarker.h"
 #include "TRint.h"
 #include "TString.h"
+#include "TStyle.h"
 #include "TSystem.h"
 
 // Project includes.
@@ -68,14 +69,18 @@ int main(int argc, char* argv[]) {
 
 
 int reconstruct(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
+
+  gStyle->SetOptFit(0000);
+  gStyle->SetOptStat("");
+
   cout
     << "Reading config file:" << endl
-    << "`" << cmdOpts.configFileName << "`" << endl;
+    << "  `" << cmdOpts.configFileName << "`" << endl;
   config::Config conf = config::loadConfigFile(cmdOpts.configFileName);
 
   cout
     << "Reading matrix file:" << endl
-    << "`" << cmdOpts.matrixFileName << "`" << endl;
+    << "  `" << cmdOpts.matrixFileName << "`" << endl;
   RecMatrix recMatrix = readMatrixFile(cmdOpts.matrixFileName);
 
 
@@ -384,7 +389,7 @@ int reconstruct(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
       TH2D& xySieveHist = xySieveHists.at(iFoil);
 
       c1->cd();
-      xySieveHist.Draw();
+      xySieveHist.Draw("colz");
       c1->Update();
       gPad->Update();
 

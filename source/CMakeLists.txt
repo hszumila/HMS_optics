@@ -35,7 +35,8 @@ set(headers
 #----------------------------------------------------------------------------
 # Copy all data files to build directory.
 set(DATA_FILES
-  hms_recon_coeff_z1cm_noxbeam_fit3.dat
+  hms_recon_coeff_z1cm_noxbeam_fit3__dep.dat
+  hms_recon_coeff_z1cm_noxbeam_fit3__indep.dat
   setup_optics_z1cm_noxbeam.txt
   setup_optics_z1cm_noxbeam_simple.txt
   setup_optics_z1cm_noxbeam_single.txt

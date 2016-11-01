@@ -1,6 +1,8 @@
 // Standard includes.
 #include <chrono>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
   using std::cin;
   using std::cout;
@@ -71,45 +73,60 @@ int main(int argc, char* argv[]) {
 
 
 int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
-  cout << "Reading config file: `" << cmdOpts.configFileName << "`." << endl;
+  cout
+    << "Reading config file:" << endl
+    << "  `" << cmdOpts.configFileName << "`" << endl;
   config::Config conf = config::loadConfigFile(cmdOpts.configFileName);
 
-  cout << "Reading matrix file: `" << conf.recMatrixFileNameOld << "`." << endl;
-  RecMatrix recMatrix = readMatrixFile(conf.recMatrixFileNameOld);
+  std::string recMatrixDepFileName = conf.recMatrixFileNameOld;
+  recMatrixDepFileName.insert(
+    conf.recMatrixFileNameOld.size()-4, "__dep"
+  );
+  std::string recMatrixIndepFileName = conf.recMatrixFileNameOld;
+  recMatrixIndepFileName.insert(
+    conf.recMatrixFileNameOld.size()-4, "__indep"
+  );
+  cout
+    << "Reading xTar dependent matrix file:" << endl
+    << "`" << recMatrixDepFileName << "`" << endl;
+  RecMatrix recMatrixDep = readMatrixFile(recMatrixDepFileName);
+  cout
+    << "Reading xTar independent matrix file:" << endl
+    << "`" << recMatrixIndepFileName << "`" << endl;
+  RecMatrix recMatrixIndep = readMatrixFile(recMatrixIndepFileName);
 
 
-  cout << "Initializing new matrix." << endl;
+  cout << "Initializing new xTar independent matrix." << endl;
   // Copy header and delta elements from old matrix.
   // Initialize other elements to 0.
   RecMatrix recMatrixNew;
-  recMatrixNew.header = recMatrix.header;
+  recMatrixNew.header = recMatrixIndep.header;
   double C_D;
   std::vector<RecMatrixLine>::iterator lineIt;
   // Construct order by order.
+  // Only include xTar independent terms.
   for (int order=0; order<=conf.fitOrder; ++order) {
-    for (int m=0; m<=order; ++m) {
-      for (int l=0; l<=order-m; ++l) {
-        for (int k=0; k<=order-m-l; ++k) {
-          for (int j=0; j<=order-m-l-k; ++j) {
-            for (int i=0; i<=order-m-l-k-j; ++i) {
-              if (i+j+k+l+m != order) continue;
+    for (int l=0; l<=order; ++l) {
+      for (int k=0; k<=order-l; ++k) {
+        for (int j=0; j<=order-l-k; ++j) {
+          for (int i=0; i<=order-l-k-j; ++i) {
+            if (i+j+k+l != order) continue;
 
-              lineIt = recMatrix.findLine(i, j, k, l, m);
-              if (lineIt != recMatrix.end()) C_D = lineIt->C_D;
-              else C_D = 0.0;
+            lineIt = recMatrixIndep.findLine(i, j, k, l, 0);
+            if (lineIt != recMatrixIndep.end()) C_D = lineIt->C_D;
+            else C_D = 0.0;
 
-              recMatrixNew.addLine(
-                0.0, 0.0, 0.0, C_D,
-                i, j, k, l, m
-              );
-            }
+            recMatrixNew.addLine(
+              0.0, 0.0, 0.0, C_D,
+              i, j, k, l, 0
+            );
           }
         }
       }
     }
   }
   int recMatrixNewLen = static_cast<int>(recMatrixNew.size());
-  cout << "  " << recMatrixNewLen << " terms" << endl;
+  cout << "  " << recMatrixNewLen << " xTar independent terms" << endl;
 
 
   // Prepare for analysis.
@@ -158,57 +175,46 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
 
     cout << "    Reconstructing events: ";
     size_t iEvent = 0;
-    double xpSum;
-    double ySum;
-    double ypSum;
+    double xpSumIndep, xpSumDep;
+    double ySumIndep, ySumDep;
+    double ypSumIndep, ypSumDep;
     double lambda;
 
     reportProgressInit();
     for (auto& event : events) {  // reconstruction event loop
       if (iEvent%2000 == 0) reportProgress(iEvent, nEvents);
 
-      xpSum = 0.0;
-      ySum = 0.0;
-      ypSum = 0.0;
+      xpSumIndep = 0.0;
+      ySumIndep = 0.0;
+      ypSumIndep = 0.0;
+      xpSumDep = 0.0;
+      ySumDep = 0.0;
+      ypSumDep = 0.0;
       lambda = 0.0;
 
-      event.xTar = -event.yVer - runConf.HMS.xMispointing;
-
-      for (const auto& line : recMatrix.matrix) {  // line loop
+      // Calculate contribution of xTar independent terms.
+      for (const auto& line : recMatrixIndep.matrix) {  // line loop
         lambda =
           pow(event.xFp/100.0, line.E_x) *
           pow(event.xpFp, line.E_xp) *
           pow(event.yFp/100.0, line.E_y) *
-          pow(event.ypFp, line.E_yp) *
-          pow(event.xTar/100.0, line.E_xTar);
+          pow(event.ypFp, line.E_yp);
 
-        xpSum += line.C_Xp * lambda;
-        ySum += line.C_Y * lambda;
-        ypSum += line.C_Yp * lambda;
+        xpSumIndep += line.C_Xp * lambda;
+        ySumIndep += line.C_Y * lambda;
+        ypSumIndep += line.C_Yp * lambda;
       }   // line loop
 
-      event.xpTar = xpSum + runConf.HMS.phiOffset;
-      event.yTar = ySum*100.0 + runConf.HMS.yMispointing;
-      event.ypTar = ypSum + runConf.HMS.thetaOffset;
+      // Now do several iterations of xTar dependent constributions, each time
+      // with a better approximation for xTar.
+      event.xTar = -event.yVer - runConf.HMS.xMispointing;
 
-      event.zVer =
-        (event.yTar - event.xVer*(cosTheta + event.ypTar*sinTheta)) /
-        (sinTheta - event.ypTar*cosTheta);
+      for (int iIter=0; iIter<conf.xTarCorrIterNum+1; ++iIter) {  // iteration loop
+        xpSumDep = 0.0;
+        ySumDep = 0.0;
+        ypSumDep = 0.0;
 
-      event.xTarVer = -event.yVer;
-      event.yTarVer = event.zVer*sinTheta + event.xVer*cosTheta;
-      event.zTarVer = event.zVer*cosTheta - event.xVer*sinTheta;
-
-      event.xTar = event.xTarVer - event.zTarVer*event.xpTar - runConf.HMS.xMispointing;
-
-      // Iterate with updated value of xTar.
-      for (int iIter=0; iIter<conf.xTarCorrIterNum; ++iIter) {  // iteration loop
-        xpSum = 0.0;
-        ySum = 0.0;
-        ypSum = 0.0;
-        lambda = 0.0;
-
-        for (const auto& line : recMatrix.matrix) {  // line loop
+        for (const auto& line : recMatrixDep.matrix) {  // line loop
           lambda =
             pow(event.xFp/100.0, line.E_x) *
             pow(event.xpFp, line.E_xp) *
@@ -216,14 +222,14 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
             pow(event.ypFp, line.E_yp) *
             pow(event.xTar/100.0, line.E_xTar);
 
-          xpSum += line.C_Xp * lambda;
-          ySum += line.C_Y * lambda;
-          ypSum += line.C_Yp * lambda;
+          xpSumDep += line.C_Xp * lambda;
+          ySumDep += line.C_Y * lambda;
+          ypSumDep += line.C_Yp * lambda;
         }  // line loop
 
-        event.xpTar = xpSum + runConf.HMS.phiOffset;
-        event.yTar = ySum*100.0 + runConf.HMS.yMispointing;
-        event.ypTar = ypSum + runConf.HMS.thetaOffset;
+        event.xpTar = (xpSumIndep+xpSumDep) + runConf.HMS.phiOffset;
+        event.yTar = (ySumIndep+ySumDep)*100.0 + runConf.HMS.yMispointing;
+        event.ypTar = (ypSumIndep+ypSumDep) + runConf.HMS.thetaOffset;
 
         event.zVer =
           (event.yTar - event.xVer*(cosTheta + event.ypTar*sinTheta)) /
@@ -234,7 +240,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
         event.zTarVer = event.zVer*cosTheta - event.xVer*sinTheta;
 
         event.xTar = event.xTarVer - event.zTarVer*event.xpTar - runConf.HMS.xMispointing;
-      }  // iteration loop
+      }   // iteration loop
 
       event.xTar += runConf.HMS.xMispointing;
 
@@ -424,7 +430,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
       TH2D& xySieveHist = xySieveHists.at(iFoil);
 
       c1->cd();
-      xySieveHist.Draw("colz");
+      xySieveHist.Draw();
       c1->Update();
       gPad->Update();
 
@@ -625,13 +631,11 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
 
       // Calculate contributions of xTar dependent terms.
       // Use old reconstruction matrix and xTarPhy.
-      xpSum = 0.0;
-      ySum = 0.0;
-      ypSum = 0.0;
+      xpSumDep = 0.0;
+      ySumDep = 0.0;
+      ypSumDep = 0.0;
 
-      for (const auto& line : recMatrix.matrix) {
-        if (line.E_xTar == 0) continue;
-
+      for (const auto& line : recMatrixDep.matrix) {
         lambda =
           pow(event.xFp/100.0, line.E_x) *
           pow(event.xpFp, line.E_xp) *
@@ -639,32 +643,27 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
           pow(event.ypFp, line.E_yp) *
           pow(xTarPhy/100.0, line.E_xTar);
 
-        xpSum += line.C_Xp * lambda;
-        ySum += line.C_Y * lambda;
-        ypSum += line.C_Yp * lambda;
+        xpSumDep += line.C_Xp * lambda;
+        ySumDep += line.C_Y * lambda;
+        ypSumDep += line.C_Yp * lambda;
       }
 
       // Calculate lambdas for xTar independent terms.
       // Use new matrix and xTarPhy.
       std::vector<double> lambdas;
       for (const auto& line : recMatrixNew.matrix) {
-        if (line.E_xTar == 0) {
-          lambdas.push_back(
-            pow(event.xFp/100.0, line.E_x) *
-            pow(event.xpFp, line.E_xp) *
-            pow(event.yFp/100.0, line.E_y) *
-            pow(event.ypFp, line.E_yp) *
-            pow(xTarPhy/100.0, line.E_xTar)
-          );
-        }
-        else {
-          lambdas.push_back(0.0);
-        }
+        lambdas.push_back(
+          pow(event.xFp/100.0, line.E_x) *
+          pow(event.xpFp, line.E_xp) *
+          pow(event.yFp/100.0, line.E_y) *
+          pow(event.ypFp, line.E_yp) *
+          pow(xTarPhy/100.0, line.E_xTar)
+        );
       }
 
       // Add lambda_i * lambda_j to (i,j)-th element of SVD matrices.
-      // Add (_TarPhy - _Sum) to SVD vectors.
-      // For xTar dependent terms lambdas are 0.0, so we need not care.
+      // Add (_TarPhy - _SumDep) to SVD vectors.
+      // We only have xTar independent terms.
       Int_t i = 0;
       Int_t j = 0;
       for (const auto& lambda_i : lambdas) {
@@ -677,33 +676,42 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
           ++j;
         }
 
-        xpTarFitVec(i) += lambda_i * (xpTarPhy - xpSum);
-        yTarFitVec(i) += lambda_i * (yTarPhy/100.0 - ySum);
-        ypTarFitVec(i) += lambda_i * (ypTarPhy - ypSum);
+        xpTarFitVec(i) += lambda_i * (xpTarPhy - xpSumDep);
+        yTarFitVec(i) += lambda_i * (yTarPhy/100.0 - ySumDep);
+        ypTarFitVec(i) += lambda_i * (ypTarPhy - ypSumDep);
 
         ++i;
       }
     }  // SVD filling loop
     reportProgressFinish();
-
-    //break;  // TMP
   }  // run loop
 
 
-  cout << "Post-processing SVD matrices and vectors." << endl;
-  // For xTar dependent coefficients:
-  //   set matrix diagonal values to 1.0 and offdiagonal values to 0.0;
-  //   set vector values to 0.0.
-  // Due to calculation of lambdas, only diagonal values need to be set now.
-  for (Int_t i=0; i<recMatrixNewLen; ++i) {
-    std::size_t i_ = static_cast<std::size_t>(i);
-
-    if (recMatrixNew.matrix.at(i_).E_xTar == 0) continue;
-
-    xpTarFitMat(i, i) = 1.0;
-    yTarFitMat(i, i) = 1.0;
-    ypTarFitMat(i, i) = 1.0;
+  std::ofstream ofs("xpVec.txt");
+  std::ios::fmtflags f1(ofs.flags());
+  std::streamsize prevPrec1 = ofs.precision(9);
+  for (Int_t iTerm=0; iTerm<recMatrixNewLen; ++iTerm) {
+    ofs << std::scientific << std::setw(17) << xpTarFitVec(iTerm) << endl;
   }
+  ofs.precision(prevPrec1);
+  ofs.flags(f1);
+  ofs.close();
+
+  ofs.open("xpMat.txt");
+  std::ios::fmtflags f2(ofs.flags());
+  std::streamsize prevPrec2 = ofs.precision(9);
+  for (Int_t iTerm=0; iTerm<recMatrixNewLen; ++iTerm) {
+    for (Int_t jTerm=0; jTerm<recMatrixNewLen; ++jTerm) {
+      ofs
+        << std::scientific << std::setw(17)
+        << xpTarFitMat(iTerm, jTerm);
+    }
+    ofs << endl;
+  }
+  ofs.precision(prevPrec2);
+  ofs.flags(f2);
+  ofs.close();
+
 
   cout << "Solving SVD problems:" << endl;
   TDecompSVD xpTarSVD(xpTarFitMat);
@@ -718,29 +726,33 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
   cout << "  ypTar: " << (ypTarSuccess ? "success" : "failure") << endl;
 
 
-  cout << "Constructing new optics matrix." << endl;
-  lineIt = recMatrixNew.begin();
-  std::vector<RecMatrixLine>::iterator lineOldIt;
-  for (Int_t iTerm=0; iTerm<recMatrixNewLen; ++iTerm) {
-    if (lineIt->E_xTar == 0) {
-      lineIt->C_Xp = xpTarFitVec(iTerm);
-      lineIt->C_Y = yTarFitVec(iTerm);
-      lineIt->C_Yp = ypTarFitVec(iTerm);
-    }
-    else {
-      lineOldIt = recMatrix.findLine(*lineIt);
-      if (lineOldIt != recMatrix.end()) {
-        lineIt->C_Xp = lineOldIt->C_Xp;
-        lineIt->C_Y = lineOldIt->C_Y;
-        lineIt->C_Yp = lineOldIt->C_Yp;
-      }
-    }
+  cout << "Constructing new xTar independent optics matrix." << endl;
+  Int_t iTerm = 0;
+  for(auto& line : recMatrixNew.matrix) {
+    line.C_Xp = xpTarFitVec(iTerm);
+    line.C_Y = yTarFitVec(iTerm);
+    line.C_Yp = ypTarFitVec(iTerm);
 
-    ++lineIt;
+    ++iTerm;
   }
 
-  cout << "  matrix saved to: " << conf.recMatrixFileNameNew << endl;
-  writeMatrixFile(conf.recMatrixFileNameNew, recMatrixNew);
+  recMatrixDepFileName = conf.recMatrixFileNameNew;
+  recMatrixDepFileName.insert(
+    conf.recMatrixFileNameNew.size()-4, "__dep"
+  );
+  recMatrixIndepFileName = conf.recMatrixFileNameNew;
+  recMatrixIndepFileName.insert(
+    conf.recMatrixFileNameNew.size()-4, "__indep"
+  );
+
+  cout
+    << "Saving xTar independent matrix to:" >> endl
+    << "`" << recMatrixIndepFileName << endl << "`";
+  writeMatrixFile(recMatrixIndepFileName, recMatrixNew);
+  cout
+    << "Saving xTar dependent matrix to:" << endl
+    << "`" << recMatrixDepFileName << "`" << endl;
+  writeMatrixFile(recMatrixDepFileName, recMatrixDep);
 
   // Cleanup and exit.
   delete c3;

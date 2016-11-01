@@ -20,7 +20,6 @@
 #include "TMarker.h"
 #include "TRint.h"
 #include "TString.h"
-#include "TStyle.h"
 #include "TSystem.h"
 
 // Project includes.
@@ -32,7 +31,7 @@
 #include "myRecMatrix.hpp"
 
 
-int hms_optics(const cmdOptions::OptionParser_reconstruct& cmdOpts);
+int reconstruct(const cmdOptions::OptionParser_reconstruct& cmdOpts);
 
 
 int main(int argc, char* argv[]) {
@@ -58,7 +57,7 @@ int main(int argc, char* argv[]) {
 
   // Run hms_optics as an application.
   TRint *theApp = new TRint("app", &argcRoot, argvRootList);
-  hms_optics(cmdOpts);
+  reconstruct(cmdOpts);
   theApp->Run(kTRUE);
 
   // Cleanup and exit.
@@ -68,15 +67,15 @@ int main(int argc, char* argv[]) {
 }
 
 
-int hms_optics(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
-
-  gStyle->SetOptFit(0000);
-  gStyle->SetOptStat("");
-
-  cout << "Reading config file: `" << cmdOpts.configFileName << "`." << endl;
+int reconstruct(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
+  cout
+    << "Reading config file:" << endl
+    << "`" << cmdOpts.configFileName << "`" << endl;
   config::Config conf = config::loadConfigFile(cmdOpts.configFileName);
 
-  cout << "Reading matrix file: `" << cmdOpts.matrixFileName << "`." << endl;
+  cout
+    << "Reading matrix file:" << endl
+    << "`" << cmdOpts.matrixFileName << "`" << endl;
   RecMatrix recMatrix = readMatrixFile(cmdOpts.matrixFileName);
 
 
@@ -385,23 +384,23 @@ int hms_optics(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
       TH2D& xySieveHist = xySieveHists.at(iFoil);
 
       c1->cd();
-      xySieveHist.Draw("colz");
+      xySieveHist.Draw();
       c1->Update();
       gPad->Update();
 
       // Fit the projections to get position estimates.
       c2->cd();
-      TH1D* xSieveHist = xySieveHist.ProjectionX();
-      xSieveHist->SetTitle("x_{fp} projection");
-      xSieveHist->Draw();
-      std::vector<Peak> xSievePeaksFit = fitMultiPeak(xSieveHist, 0.1);
+      tmpHist = xySieveHist.ProjectionX();
+      tmpHist->SetTitle("x_{fp} projection");
+      tmpHist->Draw();
+      std::vector<Peak> xSievePeaksFit = fitMultiPeak(tmpHist, 0.1);
       gPad->Update();
 
       c3->cd();
-      TH1D* ySieveHist = xySieveHist.ProjectionY();
-      ySieveHist->SetTitle("y_{fp} projection");
-      ySieveHist->Draw();
-      std::vector<Peak> ySievePeaksFit = fitMultiPeak(ySieveHist, 0.1);
+      tmpHist = xySieveHist.ProjectionY();
+      tmpHist->SetTitle("y_{fp} projection");
+      tmpHist->Draw();
+      std::vector<Peak> ySievePeaksFit = fitMultiPeak(tmpHist, 0.1);
       gPad->Update();
 
       if (cmdOpts.automatic) {

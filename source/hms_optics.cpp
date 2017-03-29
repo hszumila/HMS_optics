@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
   }
   catch (const std::runtime_error& err) {
     cout << "hms_optics: " << err.what() << endl;
-    cout << "hms_optics: Try `tmp -h` for more information." << endl;
+    cout << "hms_optics: Try `hms_optics -h` for more information." << endl;
     return 1;
   }
   if (cmdOpts.displayHelp) {

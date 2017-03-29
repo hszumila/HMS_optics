@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   }
   catch (const std::runtime_error& err) {
     cout << "reconstruct: " << err.what() << endl;
-    cout << "reconstruct: Try `tmp -h` for more information." << endl;
+    cout << "reconstruct: Try `reconstruct -h` for more information." << endl;
     return 1;
   }
   if (cmdOpts.displayHelp) {

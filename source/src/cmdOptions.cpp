@@ -99,7 +99,7 @@ void cmdOptions::OptionParser_reconstruct::printHelp() {
   std::cout << "  -a : proceed automatically, do not wait for input" << std::endl;
   std::cout << "  -o ROOTout : save output ROOT file to `ROOTout`" << std::endl;
   std::cout << "  -d DELAY : delay when showing key plots (in miliseconds)" << std::endl;
-  std::cout << "             default is `tmp.root`" << std::endl;
+  std::cout << "             default is `2000`" << std::endl;
 }
 
 
@@ -192,5 +192,5 @@ void cmdOptions::OptionParser_hmsOptics::printHelp() {
   std::cout << "  -a : proceed automatically, do not wait for input" << std::endl;
   std::cout << "  -o ROOTout : save output ROOT file to `ROOTout`" << std::endl;
   std::cout << "  -d DELAY : delay when showing key plots (in miliseconds)" << std::endl;
-  std::cout << "             default is `tmp.root`" << std::endl;
+  std::cout << "             default is `2000`" << std::endl;
 }

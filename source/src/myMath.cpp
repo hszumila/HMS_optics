@@ -9,6 +9,7 @@
 #include "TSpectrum.h"
 #include "TF1.h"
 
+bool compare(Peak p1,Peak p2){return (p1.mean<p2.mean);}
 
 // MultiPeakFunc.
 MultiPeakFunc::MultiPeakFunc(int numPeaks) : nPeaks(numPeaks) {}
@@ -71,8 +72,8 @@ std::vector<Peak> fitMultiPeak(TH1D* histo, double sigma) {
   TSpectrum* spec = new TSpectrum();
   int nPeaks = spec->Search(histo, sigma, "goff");
 
-  double* peaksX = spec->GetPositionX();
-  double* peaksY = spec->GetPositionY();
+  double* peaksX = (double*)spec->GetPositionX();
+  double* peaksY = (double*)spec->GetPositionY();
 
   MultiPeakFunc* peaksFunc = new MultiPeakFunc(nPeaks);
   TF1* fitFunc = new TF1(
@@ -103,11 +104,13 @@ std::vector<Peak> fitMultiPeak(TH1D* histo, double sigma) {
     );
   }
 
-  std::sort(
-    peaks.begin(), peaks.end(),
-    [] (Peak p1, Peak p2) {return p1.mean<p2.mean;}
-  );
+  //  std::sort(
+  //	    peaks.begin(), peaks.end(),[](Peak p1, Peak p2) {
+  //	      return p1.mean<p2.mean;
+  //	    });
 
+  std::sort(peaks.begin(), peaks.end(),compare);
+  
   delete spec;
 
   return peaks;

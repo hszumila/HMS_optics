@@ -371,12 +371,12 @@ int reconstruct(const cmdOptions::OptionParser_reconstruct& cmdOpts) {
     }
 
     // Setting things before starting.
-    std::vector<std::vector<Peak>> xSievePeakss(nFoils);
-    std::vector<std::vector<Peak>> ySievePeakss(nFoils);
-    std::vector<std::vector<std::size_t>> xSieveIndexess(nFoils);
-    std::vector<std::vector<std::size_t>> ySieveIndexess(nFoils);
-    std::vector<std::vector<std::size_t>> nEventss(nFoils);
-    std::vector<std::vector<TEllipse>> ellipsess(nFoils);
+    std::vector<std::vector<Peak> > xSievePeakss(nFoils);
+    std::vector<std::vector<Peak> > ySievePeakss(nFoils);
+    std::vector<std::vector<std::size_t> > xSieveIndexess(nFoils);
+    std::vector<std::vector<std::size_t> > ySieveIndexess(nFoils);
+    std::vector<std::vector<std::size_t> > nEventss(nFoils);
+    std::vector<std::vector<TEllipse> > ellipsess(nFoils);
 
     TH1D* tmpHist;
     TMarker* tmpMark = new TMarker(0.0, 0.0, 22);

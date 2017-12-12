@@ -48,19 +48,19 @@ void Event::reset() {
 std::vector<Event> readEvents(const config::RunConfig& runConf) {
   Float_t hsxfp, hsyfp, hsxpfp, hsypfp, frx_cm, fry_cm;
 
-  TChain* chain = new TChain("h9010");
+  TChain* chain = new TChain("T");
   for (const auto& fileName : runConf.fileList) {
     chain->Add(fileName.c_str());
   }
 
   TTree* tree = chain->CopyTree(runConf.cuts.c_str());
 
-  tree->SetBranchAddress("hsxfp", &hsxfp);
-  tree->SetBranchAddress("hsyfp", &hsyfp);
-  tree->SetBranchAddress("hsxpfp", &hsxpfp);
-  tree->SetBranchAddress("hsypfp", &hsypfp);
-  tree->SetBranchAddress("frx_cm", &frx_cm);
-  tree->SetBranchAddress("fry_cm", &fry_cm);
+  tree->SetBranchAddress("H.dc.x_fp", &hsxfp);
+  tree->SetBranchAddress("H.dc.y_fp", &hsyfp);
+  tree->SetBranchAddress("H.dc.xp_fp", &hsxpfp);
+  tree->SetBranchAddress("H.dc.yp_fp", &hsypfp);
+  tree->SetBranchAddress("H.react.x", &frx_cm);
+  tree->SetBranchAddress("H.react.y", &fry_cm);
 
   Long64_t nEntries = tree->GetEntries();
   //nEntries = 10000;  // TMP

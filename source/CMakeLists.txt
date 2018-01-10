@@ -35,19 +35,10 @@ set(headers
 #----------------------------------------------------------------------------
 # Copy all data files to build directory.
 set(DATA_FILES
-  hms_recon_coeff_z1cm_noxbeam_fit3__dep.dat
-  hms_recon_coeff_z1cm_noxbeam_fit3__indep.dat
-  setup_optics_z1cm_noxbeam.txt
-  setup_optics_z1cm_noxbeam_simple.txt
-  setup_optics_z1cm_noxbeam_single.txt
-  hmsoptics/hms68735.1.root
-  hmsoptics/hms68735.2.root
-  hmsoptics/hms68735.3.root
-  hmsoptics/hms68735.4.root
-  hmsoptics/hms68735.5.root
-  hmsoptics/hms68735.6.root
-  hmsoptics/hms68735.7.root
-  hmsoptics/hms68735.8.root
+  hms_recon_coeff_fit3__dep.dat
+  hms_recon_coeff_fit3__indep.dat
+  setup_optics_example.txt
+  hmsoptics/hms_replay_production_1235_50000.root
 )
 
 foreach(_file ${DATA_FILES})

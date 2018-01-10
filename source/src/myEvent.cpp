@@ -46,7 +46,7 @@ void Event::reset() {
 // Implementation of other functions.
 
 std::vector<Event> readEvents(const config::RunConfig& runConf) {
-  Float_t hsxfp, hsyfp, hsxpfp, hsypfp, frx_cm, fry_cm;
+  Double_t hsxfp, hsyfp, hsxpfp, hsypfp, frx_cm, fry_cm;
 
   TChain* chain = new TChain("T");
   for (const auto& fileName : runConf.fileList) {
@@ -77,6 +77,12 @@ std::vector<Event> readEvents(const config::RunConfig& runConf) {
 
     it->xVer = -(runConf.beam.x0 - frx_cm);
     it->yVer = runConf.beam.y0 - fry_cm;
+
+    // xVer is -xBeam, and yVer is -yBeam
+    // fr coord: +x left, +y up
+    // epics beam pos: +x right, +y up
+    //it->xVer = -(runConf.beam.y0 - fry_cm);
+    //it->yVer = -runConf.beam.x0 - frx_cm;
 
     ++it;
   }

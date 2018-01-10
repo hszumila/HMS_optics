@@ -18,7 +18,9 @@ config::BeamConfig::~BeamConfig() {}
 config::HMSconfig::HMSconfig() :
   thetaCentral(0.0), cosTheta(1.0), sinTheta(0.0),
   thetaOffset(0.0), phiOffset(0.0),
-  xMispointing(0.14), yMispointing(0.0)
+  //xMispointing(0.14), yMispointing(0.0)
+  xMispointing(0.09), yMispointing(0.33)
+
 {}
 
 

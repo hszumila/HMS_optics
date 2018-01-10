@@ -49,19 +49,43 @@ Peak fitPeak(TH1D* histo, double normInit, double meanInit, double sigmaInit) {
   TF1* fitFunc = new TF1(
     "fitFunc",
     "gaus(0)",
-    histo->GetXaxis()->GetXmin(), histo->GetXaxis()->GetXmax()
+    meanInit-2*TMath::Abs(sigmaInit),meanInit+2*TMath::Abs(sigmaInit)
+    //histo->GetXaxis()->GetXmin(), histo->GetXaxis()->GetXmax()
   );
   fitFunc->SetNpx(1000);
 
   fitFunc->SetParameter(0, normInit);
   fitFunc->SetParameter(1, meanInit);
   fitFunc->SetParameter(2, sigmaInit);
-  histo->Fit("fitFunc", "Q");
+  histo->Fit("fitFunc", "QR");
 
+  double aa = fitFunc->GetParameter(0);
+  double mu = fitFunc->GetParameter(1);
+  double ssig = TMath::Abs(fitFunc->GetParameter(2));
+  double chi2 = fitFunc->GetChisquare();
+  //std::cout<<"initial:\t"<<normInit<<"\t"<<meanInit<<"\t"<<sigmaInit<<std::endl;
+  //std::cout<<"\tfitted:\t"<<aa<<"\t"<<mu<<"\t"<<ssig<<"\t"<<chi2<<std::endl;
+
+  if ((mu>meanInit+0.2 || mu<meanInit-0.2) && (chi2>20 || ssig>1)){
+    mu = meanInit;
+  }
+
+  if (aa>normInit*20 || chi2<0.1  || aa<normInit/10.0){
+    ssig = 0;
+  }
+
+  if (ssig>sigmaInit){
+    ssig = TMath::Abs(sigmaInit);
+  }
+  
+  //compare number of events in central peak to norm
+  // std::cout<<"\tcorrected:\t"<<aa<<"\t"<<mu<<"\t"<<ssig<<std::endl;
+
+  //if (ssig==0){std::cout<<"flagged event for removal!!!!"<<std::endl;}
   Peak peak(
-    fitFunc->GetParameter(0),
-    fitFunc->GetParameter(1),
-    TMath::Abs(fitFunc->GetParameter(2))
+    aa,
+    mu,
+    ssig
   );
 
   return peak;
@@ -94,15 +118,16 @@ std::vector<Peak> fitMultiPeak(TH1D* histo, double sigma) {
   histo->Fit("fitFunc", "Q");
 
   std::vector<Peak> peaks;
-  for (int iPeak=0; iPeak<nPeaks; ++iPeak) {
+  for (int iPeak=0; iPeak<nPeaks; ++iPeak) { 
     peaks.push_back(
-      Peak(
-        fitFunc->GetParameter(3*iPeak),
-        fitFunc->GetParameter(3*iPeak+1),
-        TMath::Abs(fitFunc->GetParameter(3*iPeak+2))
-      )
-    );
+		    Peak(
+			 fitFunc->GetParameter(3*iPeak),
+			 fitFunc->GetParameter(3*iPeak+1),
+			 TMath::Abs(fitFunc->GetParameter(3*iPeak+2))
+			 )
+		    );
   }
+  
 
   //  std::sort(
   //	    peaks.begin(), peaks.end(),[](Peak p1, Peak p2) {

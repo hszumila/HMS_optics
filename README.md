@@ -1,4 +1,4 @@
-# HMS_optics -- from Jure's recode
+# HMS_optics
 
 Version 3.0
 
@@ -12,8 +12,9 @@ I made some modifications so that this code can be compiled and run on JLab mach
 ```
 This makes the executables and puts everything into the build directory. A quick tool just to get yourself running:
 ```
- ./hms_optics ../data/setup_optics_z1cm_noxbeam_simple.txt -o outputFile
+ cd build
+ ./hms_optics setup_optics_example.txt -o outputFile.root -a
 ```
-This requires a config file which should be in the format as in the setup_optics_z1cm_noxbeam_simple.txt. Then you define the output root file. The new matrix elements (xTar independent and xTar dependent) are printed out at the end of the code. For now, I've noticed that I have problems when using Root 6 and later. This should be fixed eventually.
+This requires a config file which should be in the format as in the setup_optics_example.txt. Then you define the output root file. The new matrix elements (xTar independent and xTar dependent) are printed out at the end of the code. If there are memory or TBranch errors, you will need a consolidated root tree to work with. Including all of the variables will throw this error. 
 
-See also https://github.com/brash99/HMS_optics
+See also https://github.com/brash99/HMS_optics to see the format for the configuration file.

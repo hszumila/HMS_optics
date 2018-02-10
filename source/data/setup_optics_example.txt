@@ -8,8 +8,8 @@ sieveslit 1
 cut abs(H.gtr.th)<0.08&&abs(H.gtr.ph)<0.05&&abs(H.gtr.dp)<8.0&&abs(H.gtr.y)<12.5&&H.cer.npe>2
 
 endlist
-hms_recon_coeff_fit3.dat
-hms_recon_coeff_fit4.dat
+hms_recon_coeff.dat
+hms_recon_coeff_opt.dat
 0.0 0.0
 6
 200 20000

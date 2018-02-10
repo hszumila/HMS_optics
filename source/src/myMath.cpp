@@ -70,7 +70,7 @@ Peak fitPeak(TH1D* histo, double normInit, double meanInit, double sigmaInit) {
     mu = meanInit;
   }
 
-  if (aa>normInit*20 || chi2<0.1  || aa<normInit/10.0){
+  if (aa>normInit*20 || chi2<0.1  ){//|| aa<normInit/10.0){
     ssig = 0;
   }
 
@@ -79,9 +79,9 @@ Peak fitPeak(TH1D* histo, double normInit, double meanInit, double sigmaInit) {
   }
   
   //compare number of events in central peak to norm
-  // std::cout<<"\tcorrected:\t"<<aa<<"\t"<<mu<<"\t"<<ssig<<std::endl;
+  //std::cout<<"\tcorrected:\t"<<aa<<"\t"<<mu<<"\t"<<ssig<<std::endl;
 
-  //if (ssig==0){std::cout<<"flagged event for removal!!!!"<<std::endl;}
+  // if (ssig==0){std::cout<<"flagged event for removal!!!!"<<std::endl;}
   Peak peak(
     aa,
     mu,

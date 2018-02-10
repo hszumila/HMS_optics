@@ -35,10 +35,10 @@ set(headers
 #----------------------------------------------------------------------------
 # Copy all data files to build directory.
 set(DATA_FILES
-  hms_recon_coeff_fit3__dep.dat
-  hms_recon_coeff_fit3__indep.dat
+  hms_recon_coeff__dep.dat
+  hms_recon_coeff__indep.dat
   setup_optics_example.txt
-  hmsoptics/hms_replay_production_1235_50000.root
+  hmsoptics/hms_replay_production_1235_-1.root
 )
 
 foreach(_file ${DATA_FILES})

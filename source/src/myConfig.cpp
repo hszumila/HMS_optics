@@ -19,7 +19,8 @@ config::HMSconfig::HMSconfig() :
   thetaCentral(0.0), cosTheta(1.0), sinTheta(0.0),
   thetaOffset(0.0), phiOffset(0.0),
   //xMispointing(0.14), yMispointing(0.0)
-  xMispointing(0.09), yMispointing(0.33)
+  // xMispointing(0.09), yMispointing(0.33)
+  xMispointing(0.0), yMispointing(0.0)
 
 {}
 
@@ -68,7 +69,7 @@ std::vector<double> config::Config::getSieveHolesX() const {
   for (size_t i=0; i<sieve.nRow; ++i) {
     xSieveHoles.at(i) =
       sieve.xHoleMin + static_cast<double>(i)*sieve.xHoleSpace +
-      sieve.x0 + runConfigs.at(0).HMS.xMispointing;
+      sieve.x0;// + runConfigs.at(0).HMS.xMispointing;
   }
 
   return xSieveHoles;
@@ -81,7 +82,7 @@ std::vector<double> config::Config::getSieveHolesY() const {
   for (size_t i=0; i<sieve.nCol; ++i) {
     ySieveHoles.at(i) =
       sieve.yHoleMin + static_cast<double>(i)*sieve.yHoleSpace +
-      sieve.y0 + runConfigs.at(0).HMS.yMispointing;
+      sieve.y0;// + runConfigs.at(0).HMS.yMispointing;
   }
 
   return ySieveHoles;
@@ -147,6 +148,10 @@ config::Config config::loadConfigFile(const std::string& fname) {
     }
     else if (tokens[0] == "cut") {
       conf.runConfigs.back().cuts = tokens[1];
+    }
+    else if (tokens[0] == "mispointing") {
+      conf.runConfigs.back().HMS.xMispointing = stod(tokens[1]);
+      conf.runConfigs.back().HMS.yMispointing = stod(tokens[2]);
     }
   }
 

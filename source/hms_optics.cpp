@@ -162,6 +162,9 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
   TH2D *h2_ySieve = new TH2D("h2_ySieve",";ySieve_{real};ySieve_{measured} - ySieve_{real}",200,-7.0,7.0,200,-3.0,3.0);
   TH2D *h2_yTar = new TH2D("h2_yTar",";yTar_{real};yTar_{measured} - yTar_{real}",200,-6.0,6.0,200,-3.0,3.0);
   TH2D *h2_zVer = new TH2D("h2_zVer",";zVer_{real};zVer_{measured} - zVer_{real}",200,-12.0,12.0,200,-5.0,5.0);
+  TH1F *h_xSieve = new TH1F("h_xSieve",";xSieve",200,-12.0,12.0);
+  TH1F *h_ySieve = new TH1F("h_ySieve",";ySieve",200,-7.0,7.0);
+
  
   cout << "Reading and analyzing root files:" << endl;
   for (const auto& runConf : conf.runConfigs) {  // run loop
@@ -236,7 +239,8 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
             pow(event.xTar/100.0, line.E_xTar);
 
 	  //do sieve hole calculations with no xp dep for now
-          xpSumDep += line.C_Xp * lambda;//0.0*lambda;//line.C_Xp * lambda;
+	  //xpSumDep += 0.0*lambda;
+	  xpSumDep += line.C_Xp * lambda;
           ySumDep += line.C_Y * lambda;
           ypSumDep += line.C_Yp * lambda;
         }  // line loop
@@ -244,12 +248,12 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
         event.xpTar = (xpSumIndep+xpSumDep) + runConf.HMS.phiOffset;
         event.yTar = (ySumIndep+ySumDep)*100.0 + runConf.HMS.yMispointing;
         event.ypTar = (ypSumIndep+ypSumDep) + runConf.HMS.thetaOffset;
-
+	
         event.zVer =
           (event.yTar - event.xVer*(cosTheta + event.ypTar*sinTheta)) /
           (sinTheta - event.ypTar*cosTheta);
 
-        event.xTarVer = -event.yVer;
+        event.xTarVer = -event.yVer- runConf.HMS.xMispointing;
         event.yTarVer = event.zVer*sinTheta + event.xVer*cosTheta;
         event.zTarVer = event.zVer*cosTheta - event.xVer*sinTheta;
 
@@ -257,6 +261,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
       }   // iteration loop
 
       event.xTar += runConf.HMS.xMispointing;
+      event.yTar -= runConf.HMS.yMispointing;
 
       event.xSieve = event.xTar + event.xpTar*conf.sieve.z0;
       event.ySieve = event.yTar + event.ypTar*conf.sieve.z0;
@@ -299,7 +304,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
     std::vector<Peak> zVerPeaks = fitMultiPeak(&zVerHist, 1);
     std::vector<Peak> yTarPeaks = fitMultiPeak(&yTarHist, 0.2);
     cout<<"Number of foils found: "<<zVerPeaks.size()<<endl;
-    for (int kk=0; kk<zVerPeaks.size(); kk++){
+    for (uint kk=0; kk<zVerPeaks.size(); kk++){
        cout<<"   peak: "<<zVerPeaks.at(kk).mean<<" , width: "<<zVerPeaks.at(kk).sigma<<endl;
     }
     if (zVerPeaks.at(0).mean<minx){
@@ -337,9 +342,15 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
     maxy = gPad->GetUymax();
     std::vector<TLine> yTarLines(nFoils);
     for (size_t iFoil=0; iFoil<nFoils; ++iFoil) {
+      double xVer = -runConf.beam.x0;//?
+      double yTarVer = runConf.zFoils.at(iFoil)*sinTheta + xVer*cosTheta - runConf.HMS.yMispointing;
+      double zTarVer = runConf.zFoils.at(iFoil)*cosTheta - xVer*sinTheta;
+      double ypTar = (0 - yTarVer)/(166.032 - zTarVer);
+      Double_t yTarZ = yTarVer - ypTar*zTarVer; 
+
       yTarLines.at(iFoil) = TLine(
-				  runConf.zFoils.at(iFoil)*sinTheta, miny,
-				  runConf.zFoils.at(iFoil)*sinTheta, maxy
+				  yTarZ, miny,
+				  yTarZ, maxy
 				  );
       yTarLines.at(iFoil).SetLineColor(6);
       yTarLines.at(iFoil).SetLineWidth(2);
@@ -350,7 +361,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
     yTarHist.Write();
 
     if (cmdOpts.automatic) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(cmdOpts.delay));
+      //     std::this_thread::sleep_for(std::chrono::milliseconds(cmdOpts.delay));
     }
     else {
       cout << "    Continue? ";
@@ -443,6 +454,8 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
 	    event.yTar <= yTarPeaks.at(iFoil).mean + 3.0*yTarPeaks.at(iFoil).sigma
 	    ) {
           xySieveHists.at(iFoil).Fill(event.xSieve, event.ySieve);
+	  h_xSieve->Fill(event.xSieve);
+	  h_ySieve->Fill(event.ySieve);
           break;
         }
       }
@@ -657,6 +670,7 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
 
       // Skip event if it is too far from any foil.
       if (iFoil == nFoils) continue;
+      //if (iFoil != 1) continue;
 
       // Find which sieve hole if any.
       uint iHole = 0;
@@ -687,8 +701,8 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
       // Calculate the real or "physical" event quantities.
       double zFoil = runConf.zFoils.at(iFoil);
 
-      double xTarVerPhy = -event.yVer;
-      double yTarVerPhy = zFoil*sinTheta + event.xVer*cosTheta;
+      double xTarVerPhy = -event.yVer - runConf.HMS.xMispointing;
+      double yTarVerPhy = zFoil*sinTheta + event.xVer*cosTheta - runConf.HMS.yMispointing ;
       double zTarVerPhy = zFoil*cosTheta - event.xVer*sinTheta;
 
       double xpTarPhy =
@@ -697,8 +711,8 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
       double ypTarPhy =
         (ySievePhys.at(ySieveIndexess.at(iFoil).at(iHole)) - yTarVerPhy) /
         (conf.sieve.z0 - zTarVerPhy);
-      double xTarPhy = xTarVerPhy - xpTarPhy*zTarVerPhy - runConf.HMS.xMispointing;
-      double yTarPhy = yTarVerPhy - ypTarPhy*zTarVerPhy - runConf.HMS.yMispointing;
+      double xTarPhy = xTarVerPhy - xpTarPhy*zTarVerPhy;// - runConf.HMS.xMispointing;//MP should be earlier
+      double yTarPhy = yTarVerPhy - ypTarPhy*zTarVerPhy;// - runConf.HMS.yMispointing;//MP should be earlier
 
 
 
@@ -855,6 +869,8 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
   h2_ySieve->Draw();
   h2_yTar->Draw();
   h2_zVer->Draw();
+  h_xSieve->Draw();
+  h_ySieve->Draw();
 
   h2_xpTar->Write();
   h2_ypTar->Write();

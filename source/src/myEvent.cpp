@@ -75,14 +75,11 @@ std::vector<Event> readEvents(const config::RunConfig& runConf) {
     it->xpFp = hsxpfp;
     it->ypFp = hsypfp;
 
-    it->xVer = -(runConf.beam.x0 - frx_cm);
-    it->yVer = runConf.beam.y0 - fry_cm;
+    //it->xVer = -(runConf.beam.x0 - frx_cm);
+    //it->yVer = runConf.beam.y0 - fry_cm;
 
-    // xVer is -xBeam, and yVer is -yBeam
-    // fr coord: +x left, +y up
-    // epics beam pos: +x right, +y up
-    //it->xVer = -(runConf.beam.y0 - fry_cm);
-    //it->yVer = -runConf.beam.x0 - frx_cm;
+    it->xVer = frx_cm;
+    it->yVer = fry_cm;
 
     ++it;
   }

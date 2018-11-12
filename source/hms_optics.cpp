@@ -301,19 +301,23 @@ int hms_optics(const cmdOptions::OptionParser_hmsOptics& cmdOpts) {
     }
     cout<<"filled histos"<<endl;
     // Fitting the histograms.
-    std::vector<Peak> zVerPeaks = fitMultiPeak(&zVerHist, 1);
-    std::vector<Peak> yTarPeaks = fitMultiPeak(&yTarHist, 0.2);
+    int nnFoils = (int) nFoils;
+    //std::vector<Peak> zVerPeaks = fitMultiPeak(&zVerHist, 2);
+    //std::vector<Peak> yTarPeaks = fitMultiPeak(&yTarHist, 2);
+    std::vector<Peak> zVerPeaks = findPeaks(&zVerHist, nnFoils);
+    std::vector<Peak> yTarPeaks = findPeaks(&yTarHist, nnFoils);
     cout<<"Number of foils found: "<<zVerPeaks.size()<<endl;
     for (uint kk=0; kk<zVerPeaks.size(); kk++){
        cout<<"   peak: "<<zVerPeaks.at(kk).mean<<" , width: "<<zVerPeaks.at(kk).sigma<<endl;
     }
+    /*
     if (zVerPeaks.at(0).mean<minx){
       zVerPeaks = fitMultiPeak(&zVerHist, 0.5);
     }
     if (zVerPeaks.size()<nFoils){
       zVerPeaks = fitMultiPeak(&zVerHist, 0.5);
     }
-
+    */
     // Plotting the histograms.
     c1->cd();
     zVerHist.Draw();
